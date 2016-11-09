@@ -394,5 +394,8 @@ void rop_test_reply_type(redisReply *reply);
 /*get key */
 int rop_get_string(redisContext *conn, char *key, char *value);
 
+int rop_hash_set(redisContext *conn, char *key, char *field, char *value);
+
+int rop_hash_get(redisContext *conn, char *key, char *field, char *value);
 
 #endif

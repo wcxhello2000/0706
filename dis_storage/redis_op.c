@@ -898,25 +898,19 @@ int rop_range_list(redisContext *conn, char *key, int from_pos, int end_pos, RVA
     int i = 0;
     redisReply *reply = NULL;
     int max_count = 0;
-
     int count = end_pos - from_pos + 1;
-
     reply = redisCommand(conn, "LRANGE %s %d %d", key, from_pos, end_pos);
     //    rop_test_reply_type(reply);
     if (reply->type != REDIS_REPLY_ARRAY) {
         LOG(REDIS_LOG_MODULE, REDIS_LOG_PROC, "[-][GMS_REDIS]LRANGE %s  error!%s\n", key, conn->errstr);
         retn = -1;
     }
-
-
     max_count = (reply->elements > count) ? count: reply->elements;
-    *get_num = max_count;
-
-
+    *get_num = max_count;	
+		
     for (i = 0; i < max_count; ++i) {
         strncpy(values[i], reply->element[i]->str, VALUES_ID_SIZE-1);
     }
-
     freeReplyObject(reply);
     return retn;
 }
@@ -1074,4 +1068,66 @@ END:
 
 freeReplyObject(reply);
 return retn;
+}
+
+/* -------------------------------------------*/
+/**
+ * @brief  想一个hash表中添加一条 key-value 数据
+ *
+ * @param conn  redis连接
+ * @param key   哈希表名
+ * @param field 
+ * @param value
+ *
+ * @returns   
+ *            0        succ
+ *            -1        FAIL
+ */
+/* -------------------------------------------*/
+int rop_hash_set(redisContext *conn, char *key, char *field, char *value)
+{
+    int retn = 0;
+    redisReply *reply = NULL;
+
+    reply =  redisCommand(conn, "hset %s %s %s", key, field, value);
+    if (reply == NULL || reply->type != REDIS_REPLY_INTEGER) {
+        LOG(REDIS_LOG_MODULE, REDIS_LOG_PROC, "[-][GMS_REDIS]hset %s %s %s error %s\n", key, field, value,conn->errstr);	
+        retn =  -1;
+        goto END;
+    }
+
+
+END:
+    freeReplyObject(reply);
+
+    return retn;
+}
+
+int rop_hash_get(redisContext *conn, char *key, char *field, char *value)
+{
+    int retn = 0;
+    int len = 0;
+
+    redisReply *reply = NULL;
+
+    reply =  redisCommand(conn, "hget %s %s", key, field);
+    if (reply == NULL || reply->type != REDIS_REPLY_STRING) {
+        LOG(REDIS_LOG_MODULE, REDIS_LOG_PROC, "[-][GMS_REDIS]hget %s %s  error %s\n", key, field, conn->errstr);	
+        retn =  -1;
+        goto END;
+    }
+
+
+    len = reply->len > VALUES_ID_SIZE? VALUES_ID_SIZE:reply->len ; 
+
+    strncpy(value, reply->str, len);
+
+    value[len] = '\0';
+
+
+END:
+    freeReplyObject(reply);
+
+
+    return retn;
 }
